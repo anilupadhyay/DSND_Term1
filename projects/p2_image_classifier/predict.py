@@ -31,7 +31,15 @@ device = torch.device("cuda" if torch.cuda.is_available() and result.gpu else "c
     
 def load_checkpoint(filepath):
     checkpoint = torch.load(filepath)
-    
+
+    if checkpoint['arch'] == 'vgg13':
+        model = models.vgg13(pretrained=True)
+    elif checkpoint['arch'] == 'vgg11':
+        model = models.vgg11(pretrained=True)
+    else:
+    #     default to densenet121
+        model = models.densenet121(pretrained=True)
+        
     model = models.densenet121(pretrained=True)
 
     model.classifier = nn.Sequential(nn.Linear(checkpoint['input_size'], checkpoint['hidden_size']),

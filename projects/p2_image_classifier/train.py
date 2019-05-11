@@ -61,21 +61,25 @@ device = torch.device("cuda" if torch.cuda.is_available() and result.gpu else "c
 
 if result.arch == 'vgg13':
     model = models.vgg13(pretrained=True)
+    input_size = 25088
 elif result.arch == 'vgg11':
     model = models.vgg11(pretrained=True)
-elif result.arch == 'densenet121':
+    input_size = 25088
+else:
+#     default to densenet121
     model = models.densenet121(pretrained=True)
-elif result.arch == 'resnet101':
-    model = models.resnet101(pretrained=True)
+    input_size = 1024
 
 # Freeze parameters so we don't backprop through them
 for param in model.parameters():
     param.requires_grad = False
-    
-model.classifier = nn.Sequential(nn.Linear(1024, result.hidden_units),
+
+output_size = len(train_data.class_to_idx)    
+
+model.classifier = nn.Sequential(nn.Linear(input_size, result.hidden_units),
                                  nn.ReLU(),
                                  nn.Dropout(0.2),
-                                 nn.Linear(result.hidden_units, 102),
+                                 nn.Linear(result.hidden_units, output_size),
                                  nn.LogSoftmax(dim=1))
 
 criterion = nn.NLLLoss()
@@ -129,10 +133,10 @@ for epoch in range(epochs):
             running_loss = 0
             model.train()
 
-            model.class_to_idx = train_data.class_to_idx
+model.class_to_idx = train_data.class_to_idx
 
-checkpoint = {'input_size': 1024,
-              'output_size': 102,
+checkpoint = {'input_size': input_size,
+              'output_size': output_size,
               'hidden_size': result.hidden_units,
               'state_dict': model.state_dict(),
               'class_to_idx': model.class_to_idx,
